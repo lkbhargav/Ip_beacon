@@ -1,3 +1,4 @@
+use anyhow::Result;
 use std::env;
 
 #[derive(Debug, Clone)]
@@ -9,6 +10,8 @@ pub struct Gmail {
 #[derive(Debug, Clone)]
 pub struct EnvironmentVariables {
     pub gmail: Gmail,
+    // in minutes
+    pub cron_interval: u32,
 }
 
 macro_rules! parse_env {
@@ -18,15 +21,19 @@ macro_rules! parse_env {
 }
 
 impl EnvironmentVariables {
-    pub fn init() -> Self {
+    pub fn init() -> Result<Self> {
         let username = parse_env!("IP_USERNAME", "IP_USERNAME is required but not found");
         let password = parse_env!(
             "IP_APP_PASSWORD",
             "IP_APP_PASSWORD is required but not found"
         );
+        let cron_interval = parse_env!("CRON_INTERVAL", "CRON_INTERVAL is required but not found");
 
-        EnvironmentVariables {
+        let cron_interval = cron_interval.parse::<u32>()?;
+
+        Ok(EnvironmentVariables {
             gmail: Gmail { username, password },
-        }
+            cron_interval,
+        })
     }
 }

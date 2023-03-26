@@ -12,7 +12,7 @@ use lettre::{Message, SmtpTransport, Transport};
 use std::time::SystemTime;
 
 fn main() {
-    let vars = environment::EnvironmentVariables::init();
+    let vars = environment::EnvironmentVariables::init().expect("error initializing env vars");
 
     // schedule a cron job
     let mut scheduler = Scheduler::new();
@@ -21,44 +21,46 @@ fn main() {
 
     let mut subject = "IP address service started";
 
-    scheduler.every(Interval::Minutes(10)).run(move || {
-        let gmail = vars.gmail.clone();
+    scheduler
+        .every(Interval::Minutes(vars.cron_interval))
+        .run(move || {
+            let gmail = vars.gmail.clone();
 
-        let system_time = SystemTime::now();
+            let system_time = SystemTime::now();
 
-        let datetime: DateTime<Utc> = system_time.into();
+            let datetime: DateTime<Utc> = system_time.into();
 
-        let datetime = format!("{}", datetime.format("%m/%d/%Y %T"));
+            let datetime = format!("{}", datetime.format("%m/%d/%Y %T"));
 
-        if !ip_address.is_empty() {
-            subject = "Detected IP address change";
-        }
-
-        // fetch new ip address
-        let mut ip_service = IPAddress::new();
-
-        loop {
-            let ip_resp = ip_service.fetch_ip_address();
-
-            if ip_resp.is_ok() {
-                ip_address = ip_resp.unwrap();
-                break;
+            if !ip_address.is_empty() {
+                subject = "Detected IP address change";
             }
-        }
 
-        let res = send_email(
-            &gmail.username,
-            &gmail.password,
-            subject,
-            format!("IP address: {ip_address}\nTimestamp: {datetime} (mm/dd/yyyy)").as_str(),
-        );
+            // fetch new ip address
+            let mut ip_service = IPAddress::new();
 
-        if res.is_ok() {
-            println!("Email sent successfully!");
-        } else {
-            println!("error sending email: {}", res.err().unwrap());
-        }
-    });
+            loop {
+                let ip_resp = ip_service.fetch_ip_address();
+
+                if ip_resp.is_ok() {
+                    ip_address = ip_resp.unwrap();
+                    break;
+                }
+            }
+
+            let res = send_email(
+                &gmail.username,
+                &gmail.password,
+                subject,
+                format!("IP address: {ip_address}\nTimestamp: {datetime} (mm/dd/yyyy)").as_str(),
+            );
+
+            if res.is_ok() {
+                println!("Email sent successfully!");
+            } else {
+                println!("error sending email: {}", res.err().unwrap());
+            }
+        });
 
     // to keep it running every second
     loop {
