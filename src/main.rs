@@ -76,8 +76,8 @@ fn main() {
 
 fn send_email(username: &str, password: &str, subject: &str, message: &str) -> Result<()> {
     let email = Message::builder()
-        .from("DoorSensor <bhargav.lakkur@gmail.com>".parse()?)
-        .reply_to("DoorSensor <bhargav.lakkur@gmail.com>".parse()?)
+        .from("IPMonitor <bhargav.lakkur@gmail.com>".parse()?)
+        .reply_to("IPMonitor <bhargav.lakkur@gmail.com>".parse()?)
         .to("Bhargav Lakkur <lkbhargav9@gmail.com>".parse()?)
         .subject(subject)
         .header(ContentType::TEXT_PLAIN)
