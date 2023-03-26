@@ -39,26 +39,29 @@ fn main() {
             // fetch new ip address
             let mut ip_service = IPAddress::new();
 
+            let mut just_fetched = String::new();
+
             loop {
                 let ip_resp = ip_service.fetch_ip_address();
 
                 if ip_resp.is_ok() {
-                    ip_address = ip_resp.unwrap();
+                    just_fetched = ip_resp.unwrap();
                     break;
                 }
             }
 
-            let res = send_email(
-                &gmail.username,
-                &gmail.password,
-                subject,
-                format!("IP address: {ip_address}\nTimestamp: {datetime} (mm/dd/yyyy)").as_str(),
-            );
+            if ip_address.ne(&just_fetched) {
+                let res = send_email(
+                    &gmail.username,
+                    &gmail.password,
+                    subject,
+                    format!("IP address: {ip_address}\nTimestamp: {datetime} (mm/dd/yyyy)")
+                        .as_str(),
+                );
 
-            if res.is_ok() {
-                println!("Email sent successfully!");
-            } else {
-                println!("error sending email: {}", res.err().unwrap());
+                if res.is_err() {
+                    println!("error sending email: {}", res.err().unwrap());
+                }
             }
         });
 
