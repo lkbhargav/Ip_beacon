@@ -27,7 +27,10 @@ impl EnvironmentVariables {
             "IP_APP_PASSWORD",
             "IP_APP_PASSWORD is required but not found"
         );
-        let cron_interval = parse_env!("CRON_INTERVAL", "CRON_INTERVAL is required but not found");
+        let cron_interval = parse_env!(
+            "IP_CRON_INTERVAL",
+            "IP_CRON_INTERVAL is required but not found"
+        );
 
         let cron_interval = cron_interval.parse::<u32>()?;
 
