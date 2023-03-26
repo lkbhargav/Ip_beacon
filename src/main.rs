@@ -41,6 +41,7 @@ fn main() {
 
             let mut just_fetched = String::new();
 
+            // in a loop for multiple retries
             loop {
                 let ip_resp = ip_service.fetch_ip_address();
 
@@ -51,6 +52,8 @@ fn main() {
             }
 
             if ip_address.ne(&just_fetched) {
+                ip_address = just_fetched;
+
                 let res = send_email(
                     &gmail.username,
                     &gmail.password,
