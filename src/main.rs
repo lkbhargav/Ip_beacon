@@ -1,15 +1,15 @@
 extern crate chrono;
 
-use anyhow::{Ok, Result};
 use chrono::offset::Utc;
 use chrono::DateTime;
 use clokwerk::{Interval, Scheduler};
+use email::{Email, Relay};
 use emitter::environment;
 use emitter::ip_address::IPAddress;
-use lettre::message::header::ContentType;
-use lettre::transport::smtp::authentication::Credentials;
-use lettre::{Message, SmtpTransport, Transport};
 use std::time::SystemTime;
+
+const EMAIL_FROM: &str = "IPMonitor <bhargav.lakkur@gmail.com>";
+const TO_ADDRESS: &str = "Bhargav Lakkur <lkbhargav9@gmail.com>";
 
 fn main() {
     let vars = environment::EnvironmentVariables::init().expect("error initializing env vars");
@@ -21,11 +21,18 @@ fn main() {
 
     let mut subject = "IP address service started";
 
+    let gmail = Email::new(
+        EMAIL_FROM,
+        EMAIL_FROM,
+        &vars.gmail.username.as_str(),
+        &vars.gmail.password.as_str(),
+        Relay::Gmail,
+    )
+    .expect("error intiializing email service");
+
     scheduler
         .every(Interval::Minutes(vars.cron_interval))
         .run(move || {
-            let gmail = vars.gmail.clone();
-
             let system_time = SystemTime::now();
 
             let datetime: DateTime<Utc> = system_time.into();
@@ -54,9 +61,8 @@ fn main() {
             if ip_address.ne(&just_fetched) {
                 ip_address = just_fetched;
 
-                let res = send_email(
-                    &gmail.username,
-                    &gmail.password,
+                let res = gmail.send(
+                    TO_ADDRESS,
                     subject,
                     format!("IP address: {ip_address}\nTimestamp: {datetime} (mm/dd/yyyy)")
                         .as_str(),
@@ -72,25 +78,4 @@ fn main() {
     loop {
         scheduler.run_pending();
     }
-}
-
-fn send_email(username: &str, password: &str, subject: &str, message: &str) -> Result<()> {
-    let email = Message::builder()
-        .from("IPMonitor <bhargav.lakkur@gmail.com>".parse()?)
-        .reply_to("IPMonitor <bhargav.lakkur@gmail.com>".parse()?)
-        .to("Bhargav Lakkur <lkbhargav9@gmail.com>".parse()?)
-        .subject(subject)
-        .header(ContentType::TEXT_PLAIN)
-        .body(String::from(message))?;
-
-    let creds = Credentials::new(username.to_string(), password.to_string());
-
-    // Open a remote connection to gmail
-    let mailer = SmtpTransport::relay("smtp.gmail.com")?
-        .credentials(creds)
-        .build();
-
-    mailer.send(&email)?;
-
-    Ok(())
 }
