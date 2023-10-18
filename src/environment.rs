@@ -41,10 +41,7 @@ impl EnvironmentVariables {
             "IP_TO_ADDRESSES is required but not found"
         );
 
-        let to_addresses = to_addresses
-            .split(",")
-            .map(|v| v[1..v.len() - 2].trim().to_string())
-            .collect::<Vec<String>>();
+        let to_addresses = fetch_to_addresses(&to_addresses);
 
         if to_addresses.len() == 0 {
             panic!("IP_TO_ADDRESSES cannot be empty");
@@ -55,5 +52,39 @@ impl EnvironmentVariables {
             to_addresses,
             cron_interval,
         })
+    }
+}
+
+fn fetch_to_addresses(to_addresses: &str) -> Vec<String> {
+    to_addresses
+        .split(",")
+        .map(|v| v.trim())
+        .map(|v| v[1..v.len() - 1].trim().to_string())
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    // Note this useful idiom: importing names from outer (for mod tests) scope.
+    use super::*;
+
+    #[test]
+    fn test_ideal_case() {
+        let test_val =
+            "(fname lname <fname.lname@domain.com>),(fname2 lname2 <fname2.lname2@domain.com>)";
+        let res = fetch_to_addresses(test_val);
+        assert_eq!(res.len(), 2);
+        assert_eq!(res[0], "fname lname <fname.lname@domain.com>");
+        assert_eq!(res[1], "fname2 lname2 <fname2.lname2@domain.com>");
+    }
+
+    #[test]
+    fn test_worst_case() {
+        let test_val =
+            "(fname lname <fname.lname@domain.com>) , (fname2 lname2 <fname2.lname2@domain.com>)";
+        let res = fetch_to_addresses(test_val);
+        assert_eq!(res.len(), 2);
+        assert_eq!(res[0], "fname lname <fname.lname@domain.com>");
+        assert_eq!(res[1], "fname2 lname2 <fname2.lname2@domain.com>");
     }
 }
