@@ -8,8 +8,7 @@ use emitter::environment;
 use emitter::ip_address::IPAddress;
 use std::time::SystemTime;
 
-const EMAIL_FROM: &str = "IPMonitor <bhargav.lakkur@gmail.com>";
-const TO_ADDRESS: &str = "Bhargav Lakkur <lkbhargav9@gmail.com>";
+const EMAIL_FROM_PLACEHOLDER: &str = "IPMonitor ";
 
 fn main() {
     let vars = environment::EnvironmentVariables::init().expect("error initializing env vars");
@@ -21,9 +20,11 @@ fn main() {
 
     let mut subject = "IP address service started";
 
+    let from_email = fetch_email_from(&vars.gmail.username);
+
     let gmail = Email::new(
-        EMAIL_FROM,
-        EMAIL_FROM,
+        from_email.clone(),
+        from_email,
         &vars.gmail.username.as_str(),
         &vars.gmail.password.as_str(),
         Relay::Gmail,
@@ -46,7 +47,7 @@ fn main() {
             // fetch new ip address
             let mut ip_service = IPAddress::new();
 
-            let mut just_fetched = String::new();
+            let just_fetched;
 
             // in a loop for multiple retries
             loop {
@@ -61,15 +62,17 @@ fn main() {
             if ip_address.ne(&just_fetched) {
                 ip_address = just_fetched;
 
-                let res = gmail.send(
-                    TO_ADDRESS,
-                    subject,
-                    format!("IP address: {ip_address}\nTimestamp: {datetime} (mm/dd/yyyy)")
-                        .as_str(),
-                );
+                for to_email in &vars.to_addresses {
+                    let res = gmail.send(
+                        &to_email,
+                        subject,
+                        format!("IP address: {ip_address}\nTimestamp: {datetime} (mm/dd/yyyy)")
+                            .as_str(),
+                    );
 
-                if res.is_err() {
-                    println!("error sending email: {}", res.err().unwrap());
+                    if res.is_err() {
+                        println!("error sending email ({to_email}): {}", res.err().unwrap());
+                    }
                 }
             }
         });
@@ -78,4 +81,8 @@ fn main() {
     loop {
         scheduler.run_pending();
     }
+}
+
+fn fetch_email_from(from_email: &str) -> String {
+    format!("{EMAIL_FROM_PLACEHOLDER} <{from_email}>")
 }

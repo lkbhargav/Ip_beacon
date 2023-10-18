@@ -6,11 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-chrono = "0.4.24"
+chrono = "0.4.29"
 clokwerk = "0.4.0"
 rand = "0.8.5"
-reqwest = { version = "0.11.15", features = ["blocking", "json"] }
-serde = { version = "1.0.158", features = ["derive"] }
-openssl = { version = "0.10", features = ["vendored"] }
+reqwest = { version = "0.11.20", features = ["blocking", "json"] }
+serde = { version = "1.0.188", features = ["derive"] }
+openssl = { version = "0.10.57", features = ["vendored"] }
 email = { git = "https://github.com/lkbhargav/emailer.git" }
-anyhow = "1.0.70"
+anyhow = "1.0.75"
